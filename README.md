@@ -1,6 +1,6 @@
 # pml - parse my log
 
-Parse an nginx logfile and group the statistics according to the metric passed in argument.
+Parse a nginx log file and display statistics
 
 ## Run
 
