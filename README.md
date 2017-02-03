@@ -14,6 +14,7 @@ Parse a nginx log file and display statistics
 - `path`: group by HTTP request path
 - `verb`: group by HTTP verb
 - `status`: group by HTTP status code
+- `agent`: group by user agent
 
 ## Sample output
 
@@ -53,6 +54,6 @@ POST	84      8.4%
 /tags           29	    2.9%
 /tags/7         19	    1.9%
 /tags/14        17	    1.7%
-```
 
-(Ouput has been truncated)
+[... skip ...]
+```

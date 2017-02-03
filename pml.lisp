@@ -3,7 +3,7 @@
 exec sbcl --script "$0" $@
 |#
 
-;; Time-stamp: <2017-02-03 11:56:06>
+;; Time-stamp: <2017-02-03 17:12:33>
 ;; Copyright (C) 2017 Pierre Lecocq
 
 #-quicklisp
@@ -33,14 +33,6 @@ exec sbcl --script "$0" $@
                                                    (eq-func . eq)
                                                    (regex . "(\\d+)")
                                                    (label . "By status")))
-                            (bytes-sent        . '((index . 7)
-                                                   (eq-func . eq)
-                                                   (regex . "(\\d+)")
-                                                   (label . "By bytes")))
-                            (http-referer      . '((index . 9)
-                                                   (eq-func . string=)
-                                                   (regex . "(\"([^\"]+)\")+")
-                                                   (label . "By referer")))
                             (http-user-agent   . '((index . 11)
                                                    (eq-func . string=)
                                                    (regex . "(\"([^\"]+)\")+")
@@ -55,7 +47,6 @@ exec sbcl --script "$0" $@
                                                     (label . "By verb")))))
 
 (defun log-fmt-value-by-metric (metric key)
-  ;; working:  (cdr (assoc key (car (cdr (cdr (assoc metric *log-parser-data*))))))
   (cdr (assoc key (caddr (assoc metric *log-parser-data*)))))
 
 (defvar *log-fmt-regex* (concatenate 'string
@@ -85,11 +76,20 @@ exec sbcl --script "$0" $@
    (time-local :accessor entry-time-local :initform nil :initarg :time-local)
    (request :accessor entry-request :initform nil :initarg :request)
    (status :accessor entry-status :initform nil :initarg :status)
-   (bytes-sent :accessor entry-bytes-sent :initform nil :initarg :bytes-sent)
-   (http-referer :accessor entry-http-referer :initform nil :initarg :http-referer)
    (http-user-agent :accessor entry-http-user-agent :initform nil :initarg :http-user-agent)
    (request-verb :accessor entry-request-verb :initform nil :initarg :request-verb)
    (request-path :accessor entry-request-path :initform nil :initarg :request-path)))
+
+(defmethod initialize-instance :around ((e entry) &key remote-addr time-local request status http-user-agent)
+  (let ((request-chunks (ppcre:split "\\s+" request)))
+    (call-next-method e
+                      :remote-addr remote-addr
+                      :time-local time-local
+                      :request request
+                      :status status
+                      :http-user-agent http-user-agent
+                      :request-verb (nth 0 request-chunks)
+                      :request-path (ppcre:regex-replace "\\?(.*)" (nth 1 request-chunks) ""))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Parser
@@ -99,18 +99,13 @@ exec sbcl --script "$0" $@
   (let ((scanner (ppcre:create-scanner *log-fmt-regex*)))
     (multiple-value-bind (matched data) (ppcre:scan-to-strings scanner line)
       (when matched
-        (let* ((request (aref data (log-fmt-value-by-metric 'request 'index)))
-               (request-chunks (ppcre:split "\\s+" request)))
+        (let ((request (aref data (log-fmt-value-by-metric 'request 'index))))
           (make-instance 'entry
                          :remote-addr (aref data (log-fmt-value-by-metric 'remote-addr 'index))
                          :time-local (aref data (log-fmt-value-by-metric 'time-local 'index))
                          :request request
                          :status (parse-integer (aref data (log-fmt-value-by-metric 'status 'index)))
-                         :bytes-sent (parse-integer (aref data (log-fmt-value-by-metric 'bytes-sent 'index) ))
-                         :http-referer (aref data (log-fmt-value-by-metric 'http-referer 'index) )
-                         :http-user-agent (aref data (log-fmt-value-by-metric 'http-user-agent 'index) )
-                         :request-verb (nth 0 request-chunks)
-                         :request-path (ppcre:regex-replace "\\?(.*)" (nth 1 request-chunks) "")))))))
+                         :http-user-agent (aref data (log-fmt-value-by-metric 'http-user-agent 'index))))))))
 
 (defun entries-from-file (path)
   (with-open-file (stream path)
@@ -159,7 +154,8 @@ exec sbcl --script "$0" $@
             ((string= metric "path") (setq metrics (cons 'request-path metrics)))
             ((string= metric "verb") (setq metrics (cons 'request-verb metrics)))
             ((string= metric "status") (setq metrics (cons 'status metrics)))
-            (t (error "Unknown metric '~a'. Supported metrics are ~a~%" metric '("ip" "path" "verb" "status")))))
+            ((string= metric "agent") (setq metrics (cons 'http-user-agent metrics)))
+            (t (error "Unknown metric '~a'. Supported metrics are ~a~%" metric '("ip" "path" "verb" "status" "agent")))))
     (unless metrics
       (error "Missing metrics in arguments"))
     (pml logfile (reverse metrics))))
