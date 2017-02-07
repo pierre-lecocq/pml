@@ -5,21 +5,27 @@ Parse a nginx log file and display statistics
 ## Run
 
 ```
-./pml.lisp /path/to/logfile metric1 metric2 ...
+./pml.lisp [--logfile FILE] [--format FORMAT] [METRICS]
 ```
 
 ## Supported metrics
 
-- `ip` : group by remote address
-- `path`: group by HTTP request path
-- `verb`: group by HTTP verb
-- `status`: group by HTTP status code
-- `agent`: group by user agent
+- `--ip` : group by remote address
+- `--path`: group by HTTP request path
+- `--verb`: group by HTTP verb
+- `--status`: group by HTTP status code
+- `--agent`: group by user agent
+
+## Supported output formats
+
+- `json`
+- `csv`
+- `txt` (default)
 
 ## Sample output
 
 ```
-$> ./pml.lisp sample/big.log verb status ip path
+$> ./pml.lisp --logfile sample/big.log --format txt --verb --status --ip --path
 
  * By verb
 GET     916     91.6%
