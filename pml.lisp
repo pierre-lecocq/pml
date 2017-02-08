@@ -3,7 +3,7 @@
 exec sbcl --script "$0" $@
 |#
 
-;; Time-stamp: <2017-02-07 15:38:50>
+;; Time-stamp: <2017-02-07 16:04:45>
 ;; Copyright (C) 2017 Pierre Lecocq
 
 #-quicklisp
@@ -14,7 +14,6 @@ exec sbcl --script "$0" $@
 (ql:quickload :cl-ppcre :silent t)
 (ql:quickload :getopt :silent t)
 
-(load "src/define.lisp")
 (load "src/entry.lisp")
 (load "src/parse.lisp")
 (load "src/format.lisp")
