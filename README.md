@@ -2,6 +2,11 @@
 
 Parse a nginx log file and display statistics
 
+## Requirements
+
+- `sbcl` : A [Common Lisp compiler](http://www.sbcl.org/)
+- `quicklisp` : A [library manager for Common Lisp](https://www.quicklisp.org/beta/#installation)
+
 ## Run
 
 ```
