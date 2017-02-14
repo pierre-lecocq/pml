@@ -1,6 +1,6 @@
 ;;;; pml.lisp
 
-;; Time-stamp: <2017-02-10 15:57:45>
+;; Time-stamp: <2017-02-14 15:07:05>
 ;; Copyright (C) 2017 Pierre Lecocq
 
 (defun help-message ()
@@ -37,6 +37,7 @@
                               ;; filters
                               ("start"     :required)
                               ("end"       :required)))
+      (declare (ignore args))
       (dolist (opt opts)
         (cond
           ((string= (car opt) "logfile") (setq logfile (cdr opt)))
@@ -59,7 +60,7 @@
     (error "~a file not found~%" logfile))
   (let ((entries (entries-from-file logfile filters)))
     (mapcar #'(lambda (metric)
-                (display-group-txt
+                (display-group-txt ;; TODO call according to `format'
                  (group-by-property entries metric (log-fmt-value-by-metric metric 'eq-func))
                  (log-fmt-value-by-metric metric 'label)
                  (length entries)))
