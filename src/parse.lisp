@@ -1,6 +1,6 @@
 ;;;; parse.lisp
 
-;; Time-stamp: <2017-02-07 16:05:08>
+;; Time-stamp: <2017-02-14 14:31:35>
 ;; Copyright (C) 2017 Pierre Lecocq
 
 (defvar *log-parser-data* '((remote-addr       . '((index . 0)
@@ -53,23 +53,57 @@
                                      "(\"([^\"]+)\")+" ; 10 & 11
                                      ))
 
-(defun entry-from-line (line)
+(defun short-month-to-integer (short-month)
+  (cdr (assoc short-month '(("Jan" . 1)
+                            ("Feb" . 2)
+                            ("Mar" . 3)
+                            ("Apr" . 4)
+                            ("May" . 5)
+                            ("Jun" . 6)
+                            ("Jul" . 7)
+                            ("Aug" . 8)
+                            ("Sept" . 9)
+                            ("Oct" . 10)
+                            ("Nov" . 11)
+                            ("Dec" . 12)) :test #'string=)))
+
+(defun log-date-to-timestamp (raw-date)
+  (let ((chunks (ppcre:split "\\s+" (substitute #\Space #\/ (substitute #\Space #\: raw-date)))))
+    (local-time:encode-timestamp 0
+                                 (parse-integer (nth 5 chunks))
+                                 (parse-integer (nth 4 chunks))
+                                 (parse-integer (nth 3 chunks))
+                                 (parse-integer (nth 0 chunks))
+                                 (short-month-to-integer (nth 1 chunks))
+                                 (parse-integer (nth 2 chunks)))))
+
+(defun out-of-filters-bounds (data filters)
+  (when filters
+    (let ((date (log-date-to-timestamp (aref data (log-fmt-value-by-metric 'time-local 'index))))
+          (start (cdr (assoc 'start filters)))
+          (end (cdr (assoc 'end filters))))
+      (or (and start (local-time:timestamp< date start))
+          (and end (local-time:timestamp> date end))))))
+
+(defun entry-from-line (line filters)
   (let ((scanner (ppcre:create-scanner *log-fmt-regex*)))
     (multiple-value-bind (matched data) (ppcre:scan-to-strings scanner line)
       (when matched
         (let ((request (aref data (log-fmt-value-by-metric 'request 'index))))
-          (make-instance 'entry
-                         :remote-addr (aref data (log-fmt-value-by-metric 'remote-addr 'index))
-                         :time-local (aref data (log-fmt-value-by-metric 'time-local 'index))
-                         :request request
-                         :status (parse-integer (aref data (log-fmt-value-by-metric 'status 'index)))
-                         :http-user-agent (aref data (log-fmt-value-by-metric 'http-user-agent 'index))))))))
+          (if (out-of-filters-bounds data filters)
+              nil
+              (make-instance 'entry
+                             :remote-addr (aref data (log-fmt-value-by-metric 'remote-addr 'index))
+                             :time-local (aref data (log-fmt-value-by-metric 'time-local 'index))
+                             :request request
+                             :status (parse-integer (aref data (log-fmt-value-by-metric 'status 'index)))
+                             :http-user-agent (aref data (log-fmt-value-by-metric 'http-user-agent 'index)))))))))
 
-(defun entries-from-file (path)
+(defun entries-from-file (path filters)
   (with-open-file (stream path)
     (loop for line = (read-line stream nil)
        while line
-       when (entry-from-line line)
+       when (entry-from-line line filters)
        collect it)))
 
 (defun group-by-property (entries property test)

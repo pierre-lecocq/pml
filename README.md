@@ -5,7 +5,7 @@ Parse a nginx log file and display statistics
 ## Run
 
 ```
-./pml.lisp [--logfile FILE] [--format FORMAT] [METRICS]
+./pml.lisp [--logfile FILE] [--format FORMAT] [METRICS] [FILTERS]
 ```
 
 ## Supported metrics
@@ -22,10 +22,15 @@ Parse a nginx log file and display statistics
 - `csv`
 - `txt` (default)
 
+## Supported filters
+
+- `start` : a start date
+- `end` : an end date
+
 ## Sample output
 
 ```
-$> ./pml.lisp --logfile sample/big.log --format txt --verb --status --ip --path
+$> ./pml.lisp --logfile sample/big.log --format txt --verb --status --ip --path --start "2017-01-01" --end "2017-02-15"
 
  * By verb
 GET     916     91.6%
