@@ -76,4 +76,4 @@ POST	84      8.4%
 
 ## License
 
-`pml` is released under the [MIT License](http://www.opensource.org/licenses/MIT).
+`pml` is released under the [MIT License](LICENSE).
