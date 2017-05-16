@@ -1,6 +1,6 @@
 ;;;; pml.lisp
 
-;; Time-stamp: <2017-02-14 15:07:05>
+;; Time-stamp: <2017-05-16 09:33:19>
 ;; Copyright (C) 2017 Pierre Lecocq
 
 (defun help-message ()
@@ -40,27 +40,28 @@
       (declare (ignore args))
       (dolist (opt opts)
         (cond
-          ((string= (car opt) "logfile") (setq logfile (cdr opt)))
-          ((string= (car opt) "format") (setq format (cdr opt)))
-          ;; metrics
-          ((string= (car opt) "agent") (setq metrics (cons 'http-user-agent metrics)))
-          ((string= (car opt) "ip") (setq metrics (cons 'remote-addr metrics)))
-          ((string= (car opt) "path") (setq metrics (cons 'request-path metrics)))
-          ((string= (car opt) "status") (setq metrics (cons 'status metrics)))
-          ((string= (car opt) "verb") (setq metrics (cons 'request-verb metrics)))
-          ;; filters
-          ((string= (car opt) "start") (setq filters (acons 'start (local-time:parse-timestring (cdr opt)) filters)))
-          ((string= (car opt) "end") (setq filters (acons 'end (local-time:parse-timestring (cdr opt)) filters))))))
+	 ((string= (car opt) "logfile") (setq logfile (cdr opt)))
+	 ((string= (car opt) "format") (setq format (cdr opt)))
+	 ;; metrics
+	 ((string= (car opt) "agent") (setq metrics (cons 'http-user-agent metrics)))
+	 ((string= (car opt) "ip") (setq metrics (cons 'remote-addr metrics)))
+	 ((string= (car opt) "path") (setq metrics (cons 'request-path metrics)))
+	 ((string= (car opt) "status") (setq metrics (cons 'status metrics)))
+	 ((string= (car opt) "verb") (setq metrics (cons 'request-verb metrics)))
+	 ;; filters
+	 ((string= (car opt) "start") (setq filters (acons 'start (local-time:parse-timestring (cdr opt)) filters)))
+	 ((string= (car opt) "end") (setq filters (acons 'end (local-time:parse-timestring (cdr opt)) filters))))))
     (values logfile (nreverse metrics) filters format)))
 
-(defun parse-my-log (logfile metrics filters format)
+(defun parse-my-log (logfile metrics filters output-format)
   (unless metrics
     (help-message))
   (unless (probe-file logfile)
     (error "~a file not found~%" logfile))
   (let ((entries (entries-from-file logfile filters)))
     (mapcar #'(lambda (metric)
-                (display-group-txt ;; TODO call according to `format'
+                (display-group
+		 output-format
                  (group-by-property entries metric (log-fmt-value-by-metric metric 'eq-func))
                  (log-fmt-value-by-metric metric 'label)
                  (length entries)))

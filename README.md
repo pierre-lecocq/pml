@@ -34,7 +34,6 @@ Parse a nginx log file and display statistics
 
 ## TODO
 
-- [ ] Format function call (txt is always used now)
 - [ ] System definition
 - [ ] Configurable log format
 
